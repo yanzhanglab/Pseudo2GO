@@ -40,7 +40,7 @@ def preprocess(pvalue_thr=1e-200, cancer_type='BRCA'):
     ####### Select pseudogene and coding genes
     ##############################################################
     print("Select pseudogene and coding genes")
-    gencode = read_gtf("../data/raw_data/gencode/gencode.v29.annotation.gtf")
+    gencode = read_gtf("../data/raw_data/gencode.v29.annotation.gtf")
     gencode = gencode[gencode['feature'] == 'gene']
 
     # select pseudogenes
@@ -69,7 +69,7 @@ def preprocess(pvalue_thr=1e-200, cancer_type='BRCA'):
     ####### generate genome sequence
     ##############################################################
     print("generate genome sequence")
-    with open("../data/raw_data/gencode/GRCh38.primary_assembly.genome.fa") as f:
+    with open("../data/raw_data/GRCh38.primary_assembly.genome.fa") as f:
         data = f.readlines()
 
     chr_seq_map = dict()
@@ -113,7 +113,7 @@ def preprocess(pvalue_thr=1e-200, cancer_type='BRCA'):
     # build similarity network
     print("filtering blast results")
 
-    similarity_res = pd.read_csv("../data/blast/similarity.csv", names=['query','target','evalue'])
+    similarity_res = pd.read_csv("../data/raw_data/blast_similarity.csv", names=['query','target','evalue'])
     similarity_res = similarity_res[similarity_res['evalue'] < pvalue_thr]
 
     # delete self-self pairs
@@ -148,8 +148,8 @@ def preprocess(pvalue_thr=1e-200, cancer_type='BRCA'):
     sparse.save_npz("../data/final_input/adj_simi.npz",sAdj_simi)
     
     
-    print("build co-expression network")
-    df = pd.read_csv('../data/raw_data/expression_network/TCGA_'+ cancer_type + '.csv', names =["index","id","name","geneSymbol","MedianExpValueTumor",
+    print("build TCGA co-expression network")
+    df = pd.read_csv('../data/raw_data/TCGA_'+ cancer_type + '.csv', names =["index","id","name","geneSymbol","MedianExpValueTumor",
                          "MedianExpValueNormal","log_aveExpValueTumor",
                          "log_aveExpValueNormal","expValuesTumor","expValuesNormal",
                          "log_expValuesTumor","log_expValuesNormal","paired"],
@@ -171,13 +171,13 @@ def preprocess(pvalue_thr=1e-200, cancer_type='BRCA'):
         for x in value:
             adj_co_expression[key][ x[0] ] = 1
     sAdj_co = sparse.csr_matrix(adj_co_expression)
-    sparse.save_npz("../data/final_input/adj_coexp_"+cancer_type +".npz",sAdj_co)
+    sparse.save_npz("../data/final_input/adj_TCGA_"+cancer_type +".npz",sAdj_co)
     
     print("generate node2vec embeddings for co-expression network")
     G_coexp = nx.from_scipy_sparse_matrix(sAdj_co)
     node2vec_coexp = Node2Vec(G_coexp, dimensions=256, walk_length=15, num_walks=150, workers=28)
     model_coexp = node2vec_coexp.fit(window=10, min_count=1, batch_words=4)  
-    model_coexp.wv.save_word2vec_format("../data/final_input/node2vec_coexp_"+cancer_type+".txt")
+    model_coexp.wv.save_word2vec_format("../data/final_input/node2vec_TCGA_"+cancer_type+".txt")
 
     
     
@@ -208,7 +208,7 @@ def preprocess(pvalue_thr=1e-200, cancer_type='BRCA'):
     ############ Generate feature dataframe ##################
     
     print("Get GO labels for both pseudogenes and coding genes")
-    goa = pd.read_csv("../data/raw_data/go_annotation/goa_human.gaf",sep="\t", 
+    goa = pd.read_csv("../data/raw_data/goa_human.gaf",sep="\t", 
                       skiprows=31,names=['DB','DB Object ID','DB Object Symbol','Qualifier','GO','reference','Evidence',
                                           'with form','Aspect','DB Object Name','Synonym','type','Taxon','Date','Assigned by',
                                           'extension','Gene product form ID'])
