@@ -1,7 +1,7 @@
 # Pseudo2GO
 
 ## Description
-This is a A graph-based deep learning method for predicting pseudogene functions by borrowing information from coding genes. We use both network information and node attributes to improve the performance. Sequence similarity networks are used to construct graphs connecting pseudogenes and coding genes, which are used to propagate node attribtues, so that pseudogenes can borrow information from well-studied coding genes.
+This is a graph-based deep learning method for predicting pseudogene functions by borrowing information from coding genes. We use both network information and node attributes to improve the performance. Sequence similarity networks are used to construct graphs connecting pseudogenes and coding genes, which are used to propagate node attribtues, so that pseudogenes can borrow information from well-studied coding genes.
 
 We use two types of expression profiles (from TCGA and GTEx database, respectively), interactions with microRNAs and PPI and genetic interactions as the node attributes (initial feature representation).
 
@@ -24,13 +24,13 @@ You can download the raw data and processed data (ready for use in the model) fr
 
 ### Steps
 #### Step1: decompress data files
-> unzip data.zip
-> unzip raw_data.zip
-> unzip final_input.zip
+> unzip data.zip       
+> unzip raw_data.zip        
+> unzip final_input.zip       
 > mv raw_data final_input data
 
 #### Step2: preprossing (Optional)
-> cd preprocessing
+> cd preprocessing          
 > python preprocess_final.py
 
 #### Step2: run the model
