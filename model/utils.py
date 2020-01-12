@@ -83,7 +83,7 @@ def evaluate_performance(y_test, y_score):
     return perf
     
 
-def compute_performance(preds, labels):
+def compare_performance_blast(preds, labels):
     preds = np.round(preds, 2)
     labels = labels.astype(np.int32)
     f_max = 0

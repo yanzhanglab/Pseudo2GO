@@ -6,7 +6,7 @@ def get_gene_ontology(filename='go-basic.obo'):
     # Reading Gene Ontology from OBO Formatted file
     go = dict()
     obj = None
-    with open('../data/raw_data/go_annotation/' + filename, 'r') as f:
+    with open('../data/raw_data/' + filename, 'r') as f:
         for line in f:
             line = line.strip()
             if not line:

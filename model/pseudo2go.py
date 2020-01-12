@@ -12,9 +12,6 @@ import torch_geometric.transforms as T
 from torch_geometric.nn import GCNConv
 from torch_geometric.nn import GATConv
 
-from sklearn.preprocessing import scale,normalize
-from sklearn.feature_extraction.text import CountVectorizer
-
 from utils import load_node2vec_embedding, reshape, compute_single_roc, compute_top_k, compute_performance, calculate_accuracy, evaluate_performance
 import argparse
 from collections import defaultdict
@@ -26,15 +23,12 @@ parser.add_argument('--label', type=str, default='mf')
 parser.add_argument('--hidden', type=int, default=256)
 parser.add_argument('--iter', type=int, default=400)
 parser.add_argument('--lr', type=float, default=0.01)
-parser.add_argument('--cancer', type=str, default='BRCA')
 parser.add_argument('--attribute', type=str, default="all")
 parser.add_argument('--network', type=str, default="simi")
 args = parser.parse_args()
 
-path = "../../data/final_input/"
+path = "../data/final_input/"
 feats = pd.read_pickle(path + "features.pkl")
-
-random_iter = np.random.randint(10000)
 
 
 class my_GCN(torch.nn.Module):
@@ -54,17 +48,11 @@ class my_GCN(torch.nn.Module):
         return x
     
 def choose_attribute(attr):
-    if attr == "random":
-        x = np.random.randn(feats.shape[0],256)
-        print("random feature")
-    elif attr == "identity":
-        x = np.identity(feats.shape[0])
-        print("identity feature")
     elif attr == "miRNA":
         x = reshape(feats['microRNA_250'].values)
         print("microRNA feature")
     elif attr == "TCGA-coexpr":
-        x = load_node2vec_embedding(path + "node2vec_coexp_"+args.cancer+".txt")
+        x = load_node2vec_embedding(path + "node2vec_TCGA_BRCA.txt")
         print("TCGA coexpression node2vec feature")
     elif attr == "ppi":
         x = load_node2vec_embedding(path + "node2vec_ppi.txt")
@@ -75,46 +63,19 @@ def choose_attribute(attr):
     elif attr == "GTEx-node2vec":
         x = load_node2vec_embedding(path + "node2vec_GTEx.txt")
         print("GTEx node2vec")
-    elif attr == "all-except-TCGA":
-        x_ppi = load_node2vec_embedding(path + "node2vec_ppi.txt")
-        x_mirna = reshape(feats['microRNA_250'].values)
-        x_GTEx = load_node2vec_embedding(path + "node2vec_GTEx.txt")
-        x = np.hstack((x_ppi, x_mirna, x_GTEx))
-        print("microRNA plus ppi plus GTEx feature")
-    elif attr == "all-except-GTEx":
-        x_coexpr = load_node2vec_embedding(path + "node2vec_coexp_"+args.cancer+".txt")
-        x_ppi = load_node2vec_embedding(path + "node2vec_ppi.txt")
-        x_mirna = reshape(feats['microRNA_250'].values)
-        x = np.hstack((x_coexpr, x_ppi, x_mirna))
-        print("microRNA plus coexpresion plus ppi feature")
     elif attr == "all":
-        x_coexpr = load_node2vec_embedding(path + "node2vec_coexp_"+args.cancer+".txt")
+        x_coexpr = load_node2vec_embedding(path + "node2vec_TCGA_BRCA.txt")
         x_ppi = load_node2vec_embedding(path + "node2vec_ppi.txt")
         x_mirna = reshape(feats['microRNA_250'].values)
         x_GTEx = load_node2vec_embedding(path + "node2vec_GTEx.txt")
         x = np.hstack((x_coexpr, x_ppi, x_mirna, x_GTEx))
         print("microRNA plus coexpresion plus ppi plus GTEx feature")
-    elif attr == 'shuffle':
-        # shuffle all attribtues
-        x_coexpr = load_node2vec_embedding(path + "node2vec_coexp_"+args.cancer+".txt")
-        x_ppi = load_node2vec_embedding(path + "node2vec_ppi.txt")
-        x_mirna = reshape(feats['microRNA_250'].values)
-        x_GTEx = load_node2vec_embedding(path + "node2vec_GTEx.txt")
-        x = np.hstack((x_coexpr, x_ppi, x_mirna, x_GTEx))
-        np.random.shuffle(x)
-        print("shuffled node attributes")
     return x
 
 def choose_network(netw):
     if netw == "simi":
         edges = sp.load_npz(path + "adj_simi.npz")
         print("similarity network")
-    elif netw == "coexpr":
-        edges = sp.load_npz(path + "adj_coexp_" + args.cancer + ".npz")
-        print("coexpression network")
-    elif netw == "ppi":
-        edges = sp.load_npz(path + "adj_ppi.npz")
-        print("ppi network")
     return edges
 
 def choose_label(lab):
@@ -142,10 +103,11 @@ def load_data():
     data_edge_index = torch.tensor([row,col], dtype=torch.long)
     
     data = Data(x=data_x, edge_index=data_edge_index, y=data_y)
+    # training on coding genes
     data.train_mask = torch.tensor(feats['gene_type'] == 'protein_coding', dtype=torch.uint8)
+    # test on pseudogenes that have at least one GO annotation
     data.test_mask = torch.tensor((feats['gene_type'] != 'protein_coding') & (data.y.cpu().numpy().sum(axis=1) != 0), dtype=torch.uint8)
     print("number of test cases", sum((feats['gene_type'] != 'protein_coding') & (data.y.cpu().numpy().sum(axis=1) != 0)))
-    #print(data)
     
     return data
 
@@ -172,10 +134,7 @@ def train_model():
         perf = evaluate_performance(final_labels, final_preds)
         
         embeds = model.get_embedding(data.x, data.edge_index).cpu().numpy()
-        #np.save('embeds_'+ args.label + '_' + network_type +'.npy', embeds)
-        #np.save('preds_' + args.attribute + "_" + args.label + '.npy', final_preds)
         
-        #print(perf)
     return model, perf, final_preds, final_labels
 
 
@@ -183,7 +142,7 @@ def train_model():
 
 
 trained_model, perf, preds, labels = train_model()
-filename = "feature_comparison/results_" + args.label + "_" + args.attribute + "_" + str(random_iter) + ".json"
+filename = "../results/results_" + args.label + "_" + args.attribute + ".json"
 with open(filename,"w") as f:
     json.dump(perf, f)
 print("--------------------------------")
