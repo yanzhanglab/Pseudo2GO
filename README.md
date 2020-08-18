@@ -5,7 +5,23 @@ This is a graph-based deep learning method for predicting pseudogene functions b
 
 We use two types of expression profiles (from TCGA and GTEx database, respectively), interactions with microRNAs and PPI and genetic interactions as the node attributes (initial feature representation).
 
-We have shown that our method achieved state-of-the-art performance, significantly outperforming existing methods. Our graph neural network model is implemented based on Pytorch Geometric package in Python 3.6.
+We have shown that our method achieved state-of-the-art performance, significantly outperforming existing methods. Our graph neural network model is implemented based on Pytorch Geometric package in Python 3.6.     
+     
+## Citing
+If you find our work is useful for your research, please consider citing our [work](https://www.frontiersin.org/articles/10.3389/fgene.2020.00807/full):      
+```
+@ARTICLE{10.3389/fgene.2020.00807,
+AUTHOR={Fan, Kunjie and Zhang, Yan},   
+TITLE={Pseudo2GO: A Graph-Based Deep Learning Method for Pseudogene Function Prediction by Borrowing Information From Coding Genes},      
+JOURNAL={Frontiers in Genetics},      
+VOLUME={11},      
+PAGES={807},     
+YEAR={2020},      
+URL={https://www.frontiersin.org/article/10.3389/fgene.2020.00807},       
+DOI={10.3389/fgene.2020.00807},      
+ISSN={1664-8021}
+}
+```
 
 ## Usage
 ### Requirements
